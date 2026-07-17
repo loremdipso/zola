@@ -1,6 +1,5 @@
 use anyhow::{Result, anyhow};
 use giallo::ParsedFence;
-use log::info;
 use std::{
     io::Write,
     process::{Command, Stdio},
@@ -66,10 +65,11 @@ fn convert_chart_to_svg(code: &ParsedFence, content: &str) -> Result<String> {
         convert_chart_to_svg_matplotlib(code, content)?
     };
 
-    let before_len = content.len() as isize;
-    let content = post_process_svg(&content)?;
-    let after_len = content.len() as isize;
-    info!("New chart is {} bytes smaller after post-processing", before_len - after_len);
+    // let before_len = content.len() as isize;
+    let content = post_process_svg_svgo(&content)?;
+    // dbg!(&content);
+    // let after_len = content.len() as isize;
+    // info!("New chart is {} bytes smaller after post-processing", before_len - after_len);
     Ok(content)
 }
 
@@ -160,6 +160,18 @@ svg_data = re.sub(r'<\\?xml[^>]*\\?>\\s*', '', svg_data)
 svg_data = re.sub(r'<!DOCTYPE[^>]*>\\s*', '', svg_data)
 svg_data = re.sub(r'<metadata>.*?</metadata>\\s*', '', svg_data, flags=re.DOTALL)
 
+# Style stuff
+svg_data = re.sub(r'\\s+id=\"[^\"]*\"', '', svg_data)
+
+# This might be incorrect. Keeping until we verify either way.
+svg_data = re.sub(r'\\s+xlink:href=\"[^\"]*\"', '', svg_data)
+svg_data = re.sub(r'\\s+clip-path=\"[^\"]*\"', '', svg_data)
+
+# Done to reduce size a smidge
+font_family = re.search(r'font-family:([^;\"]+)[;\"]+', svg_data).group(0)
+svg_data = re.sub(r'\\s*font-family:[^;\"]+[;\"]+', '', svg_data)
+#svg_data = font_family
+
 # Write to stdout
 sys.stdout.write(svg_data)
             ",
@@ -181,6 +193,7 @@ sys.stdout.write(svg_data)
     let output = child.wait_with_output()?;
     if output.status.success() {
         let svg_output = String::from_utf8(output.stdout)?;
+        // dbg!(&svg_output);
         Ok(svg_output)
     } else {
         let error_msg = String::from_utf8(output.stderr)?;
@@ -189,7 +202,33 @@ sys.stdout.write(svg_data)
 }
 
 #[allow(unused)]
-fn post_process_svg(content: &str) -> Result<String> {
+fn post_process_svg_svgo(content: &str) -> Result<String> {
+    let mut child = Command::new("npx")
+        .args(&["-y", "svgo", "-"])
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()?;
+
+    {
+        let mut stdin =
+            child.stdin.take().ok_or("Failed to open stdin").map_err(|e| anyhow!("{e}"))?;
+        stdin.write_all(content.as_bytes())?;
+    }
+
+    let output = child.wait_with_output()?;
+    if output.status.success() {
+        let svg_output = String::from_utf8(output.stdout)?;
+        Ok(svg_output)
+    } else {
+        let error_msg = String::from_utf8(output.stderr)?;
+        Err(anyhow!(error_msg))
+    }
+}
+
+// This was... actually not that useful. Taking out for now
+#[allow(unused)]
+fn post_process_svg_magick(content: &str) -> Result<String> {
     let mut child = Command::new("magick")
         .args(&["-", "svg:-"])
         .stdin(Stdio::piped())
@@ -197,6 +236,7 @@ fn post_process_svg(content: &str) -> Result<String> {
         .stderr(Stdio::piped())
         .spawn()?;
 
+    // dbg!(&content);
     {
         let mut stdin =
             child.stdin.take().ok_or("Failed to open stdin").map_err(|e| anyhow!("{e}"))?;
