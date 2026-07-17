@@ -6,13 +6,15 @@ use std::{
 };
 
 #[cfg(not(debug_assertions))]
-const CACHE_FOLDER_NAME: &str = ".cache";
+const CACHE_FOLDER_NAME: &str = ".publish_cache";
+#[cfg(not(debug_assertions))]
+const DEBUG_CACHE_FOLDER_NAME: &str = ".debug_cache";
 
 #[cfg(not(debug_assertions))]
 const VERSION: u64 = 1;
 
 #[allow(unused_variables)]
-pub fn format_chart(code: ParsedFence, content: &str, is_publishing: bool) -> String {
+pub fn format_chart(code: &ParsedFence, content: &str, is_publishing: bool) -> String {
     let content = content.trim();
 
     #[cfg(not(debug_assertions))]
@@ -24,18 +26,24 @@ pub fn format_chart(code: ParsedFence, content: &str, is_publishing: bool) -> St
             path::Path,
         };
 
-        let path = Path::new(CACHE_FOLDER_NAME).join(format!("{hash}.svg"));
+        let path = if is_publishing {
+            Path::new(CACHE_FOLDER_NAME).join(format!("{hash}.svg"))
+        } else {
+            Path::new(DEBUG_CACHE_FOLDER_NAME).join(format!("{hash}.svg"))
+        };
+
         if let Ok(contents) = read_to_string(&path) {
             return contents;
         }
 
         match convert_chart_to_svg(code, content) {
-            Ok(result) => {
-                let contents = format!("<div class=\"custom-chart\">{}</div>", result);
+            Ok(contents) => {
                 if is_publishing {
                     _ = create_dir(CACHE_FOLDER_NAME);
-                    _ = std::fs::write(path, &contents);
-                }
+                } else {
+                    _ = create_dir(DEBUG_CACHE_FOLDER_NAME);
+                };
+                _ = std::fs::write(path, &contents);
                 return contents;
             }
             Err(e) => {
@@ -45,12 +53,12 @@ pub fn format_chart(code: ParsedFence, content: &str, is_publishing: bool) -> St
     }
 
     match convert_chart_to_svg(code, content) {
-        Ok(result) => format!("<div class=\"custom-chart\">{}</div>", result),
+        Ok(result) => result,
         Err(e) => format!("<div class=\"custom-chart-error\">{}</div>", e),
     }
 }
 
-fn convert_chart_to_svg(code: ParsedFence, content: &str) -> Result<String> {
+fn convert_chart_to_svg(code: &ParsedFence, content: &str) -> Result<String> {
     if code.lang == "vega" {
         convert_chart_to_svg_vega(code, content)
     } else {
@@ -60,7 +68,7 @@ fn convert_chart_to_svg(code: ParsedFence, content: &str) -> Result<String> {
 
 // This was actually not great
 #[allow(unused)]
-fn convert_chart_to_svg_vega(_code: ParsedFence, content: &str) -> Result<String> {
+fn convert_chart_to_svg_vega(_code: &ParsedFence, content: &str) -> Result<String> {
     let mut child = Command::new("npx")
         .args(["--yes", "-p", "vega-lite", "-p", "vega", "-p", "vega-cli", "vl2svg"])
         .stdin(Stdio::piped())
@@ -84,7 +92,7 @@ fn convert_chart_to_svg_vega(_code: ParsedFence, content: &str) -> Result<String
     }
 }
 
-fn convert_chart_to_svg_matplotlib(_code: ParsedFence, content: &str) -> Result<String> {
+fn convert_chart_to_svg_matplotlib(_code: &ParsedFence, content: &str) -> Result<String> {
     let mut child = Command::new("python3")
         .args([
             "-c",

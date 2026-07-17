@@ -574,14 +574,20 @@ pub fn markdown_to_html(
                     code_block = Some(fence);
                 }
                 Event::End(TagEnd::CodeBlock) => {
-                    let html = if let Some(code) = code_block.take() {
+                    let mut maybe_chart = None;
+                    let mut html = if let Some(mut code) = code_block.take() {
                         if code.lang == "chart" || code.lang == "vega" || code.lang == "py chart" {
-                            super::chart::format_chart(
-                                code,
+                            maybe_chart = Some(super::chart::format_chart(
+                                &code,
                                 &code_block_content,
                                 context.config.is_in_publish_mode(),
-                            )
-                        } else if let Some(hl) = &context.config.markdown.highlighting {
+                            ));
+                            if code.lang == "py chart" {
+                                code.lang = "py".into();
+                            }
+                        }
+
+                        if let Some(hl) = &context.config.markdown.highlighting {
                             if !hl.registry.contains_grammar(&code.lang) {
                                 let location = if let Some(p) = path {
                                     format!(" in {p:?}")
@@ -626,6 +632,14 @@ pub fn markdown_to_html(
                             "can we get into a TagEnd::CodeBlock without having seen TagStart?"
                         )
                     };
+
+                    if let Some(chart) = maybe_chart {
+                        html = format!(
+                            "<div class=\"custom-chart-container\"><div class=\"custom-chart\">{}</div><details><summary>Source</summary><div class=\"custom-chart-source\">{}</div></details></div>",
+                            chart, html
+                        );
+                    }
+
                     events.push(Event::Html(html.into()));
                     code_block = None;
                     code_block_content.clear();
