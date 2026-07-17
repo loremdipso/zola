@@ -1,5 +1,6 @@
 use anyhow::{Result, anyhow};
 use giallo::ParsedFence;
+use log::info;
 use std::{
     io::Write,
     process::{Command, Stdio},
@@ -59,11 +60,17 @@ pub fn format_chart(code: &ParsedFence, content: &str, is_publishing: bool) -> S
 }
 
 fn convert_chart_to_svg(code: &ParsedFence, content: &str) -> Result<String> {
-    if code.lang == "vega" {
-        convert_chart_to_svg_vega(code, content)
+    let content = if code.lang == "vega" {
+        convert_chart_to_svg_vega(code, content)?
     } else {
-        convert_chart_to_svg_matplotlib(code, content)
-    }
+        convert_chart_to_svg_matplotlib(code, content)?
+    };
+
+    let before_len = content.len() as isize;
+    let content = post_process_svg(&content)?;
+    let after_len = content.len() as isize;
+    info!("New chart is {} bytes smaller after post-processing", before_len - after_len);
+    Ok(content)
 }
 
 // This was actually not great
@@ -163,6 +170,31 @@ sys.stdout.write(svg_data)
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .env("MPLBACKEND", "SVG")
+        .spawn()?;
+
+    {
+        let mut stdin =
+            child.stdin.take().ok_or("Failed to open stdin").map_err(|e| anyhow!("{e}"))?;
+        stdin.write_all(content.as_bytes())?;
+    }
+
+    let output = child.wait_with_output()?;
+    if output.status.success() {
+        let svg_output = String::from_utf8(output.stdout)?;
+        Ok(svg_output)
+    } else {
+        let error_msg = String::from_utf8(output.stderr)?;
+        Err(anyhow!(error_msg))
+    }
+}
+
+#[allow(unused)]
+fn post_process_svg(content: &str) -> Result<String> {
+    let mut child = Command::new("magick")
+        .args(&["-", "svg:-"])
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
         .spawn()?;
 
     {

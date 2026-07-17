@@ -214,6 +214,7 @@ plt.xlabel('Fruits')
     .unwrap()
     .body;
     assert_eq!(body, "TEST");
+    // assert_eq!(body.len(), 500);
 }
 
 #[test]
