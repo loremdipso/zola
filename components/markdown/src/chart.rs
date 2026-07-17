@@ -19,7 +19,7 @@ pub fn format_chart(code: &ParsedFence, content: &str, is_publishing: bool) -> S
 
     #[cfg(not(debug_assertions))]
     {
-        let hash = get_stable_hash(content).to_string();
+        let hash = super::utils::get_stable_hash(content).to_string();
 
         use std::{
             fs::{create_dir, read_to_string},
@@ -251,15 +251,4 @@ fn post_process_svg_magick(content: &str) -> Result<String> {
         let error_msg = String::from_utf8(output.stderr)?;
         Err(anyhow!(error_msg))
     }
-}
-
-// TODO: use good hash
-#[cfg(not(debug_assertions))]
-fn get_stable_hash(s: &str) -> u64 {
-    let mut hash = 14695981039346656037_u64; // FNV offset basis
-    for byte in s.as_bytes() {
-        hash ^= *byte as u64;
-        hash = hash.wrapping_mul(1099511628211_u64); // FNV prime
-    }
-    hash + VERSION
 }
