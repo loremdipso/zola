@@ -200,18 +200,13 @@ fn can_render_charts() {
     });
     let body = common::render_with_config(
         r#"
-```chart
-{
-  "$schema": "https://vega.github.io/schema/vega-lite/v6.json",
-  "width": "container",
-  "height": 250,
-  "data": {"url": "data/cars.json"},
-  "mark": "bar",
-  "encoding": {
-    "x": {"field": "Origin"},
-    "y": {"aggregate": "count", "title": "Number of Cars"}
-  }
-}
+```py chart
+fruits = ['Apples', 'Bananas', 'Cherries', 'Dates']
+sales = [400, 350, 300, 450]
+
+plt.bar(fruits, sales)
+plt.title('Fruit Sales')
+plt.xlabel('Fruits')
 ```
 "#,
         config,
