@@ -33,3 +33,4 @@ shell.nix
 
 # mta stuff 
 install.sh
+install_debug.sh

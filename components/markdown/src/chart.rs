@@ -50,6 +50,14 @@ pub fn format_chart(code: ParsedFence, content: &str) -> String {
     }
 }
 
+fn convert_chart_to_svg(code: ParsedFence, content: &str) -> Result<String> {
+    if code.lang == "vega" {
+        convert_chart_to_svg_vega(code, content)
+    } else {
+        convert_chart_to_svg_matplotlib(code, content)
+    }
+}
+
 // This was actually not great
 #[allow(unused)]
 fn convert_chart_to_svg_vega(_code: ParsedFence, content: &str) -> Result<String> {
@@ -76,8 +84,7 @@ fn convert_chart_to_svg_vega(_code: ParsedFence, content: &str) -> Result<String
     }
 }
 
-// Let's just try matplotlib
-fn convert_chart_to_svg(_code: ParsedFence, content: &str) -> Result<String> {
+fn convert_chart_to_svg_matplotlib(_code: ParsedFence, content: &str) -> Result<String> {
     let mut child = Command::new("python3")
         .args([
             "-c",
@@ -124,8 +131,13 @@ svg_data = svg_buffer.getvalue()
 plt.close()
 
 # Remove junk via regexes that we're too dumb to configure away
-svg_data = re.sub(r'width=\"[^\"]+\"', '', svg_data)
-svg_data = re.sub(r'height=\"[^\"]+\"', '', svg_data)
+
+# Height/width
+old_tag = re.search(r'<svg[^>]*>', svg_data).group(0)
+new_tag = re.sub(r'\\s*(?:width|height)=\"[^\"]*\"', '', old_tag)
+svg_data = svg_data.replace(old_tag, new_tag, 1)
+
+# Metadata
 svg_data = re.sub(r'<\\?xml[^>]*\\?>\\s*', '', svg_data)
 svg_data = re.sub(r'<!DOCTYPE[^>]*>\\s*', '', svg_data)
 svg_data = re.sub(r'<metadata>.*?</metadata>\\s*', '', svg_data, flags=re.DOTALL)
