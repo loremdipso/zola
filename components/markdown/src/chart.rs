@@ -28,24 +28,29 @@ pub fn format_chart(code: ParsedFence, content: &str) -> String {
             return contents;
         }
 
-        let contents = convert_chart_to_svg(code, content);
-        _ = create_dir(CACHE_FOLDER_NAME);
-        _ = std::fs::write(path, &contents);
-        return contents;
+        match convert_chart_to_svg(code, content) {
+            Ok(result) => {
+                let contents = format!("<div class=\"custom-chart\">{}</div>", result);
+                _ = create_dir(CACHE_FOLDER_NAME);
+                _ = std::fs::write(path, &contents);
+                return contents;
+            }
+            Err(e) => {
+                return format!("<div class=\"custom-chart-error\">{}</div>", e);
+            }
+        }
     }
 
     #[cfg(debug_assertions)]
-    convert_chart_to_svg(code, content)
-}
-
-fn convert_chart_to_svg(code: ParsedFence, content: &str) -> String {
-    match convert_chart_to_svg_inner(code, content) {
-        Ok(result) => result,
-        Err(e) => e.to_string(),
+    {
+        match convert_chart_to_svg(code, content) {
+            Ok(result) => format!("<div class=\"custom-chart\">{}</div>", result),
+            Err(e) => format!("<div class=\"custom-chart-error\">{}</div>", e),
+        }
     }
 }
 
-fn convert_chart_to_svg_inner(_code: ParsedFence, content: &str) -> Result<String> {
+fn convert_chart_to_svg(_code: ParsedFence, content: &str) -> Result<String> {
     let mut child = Command::new("npx")
         .args(["--yes", "-p", "vega-lite", "-p", "vega", "-p", "vega-cli", "vl2svg"])
         .stdin(Stdio::piped())
