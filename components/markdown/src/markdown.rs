@@ -575,14 +575,22 @@ pub fn markdown_to_html(
                 }
                 Event::End(TagEnd::CodeBlock) => {
                     let mut maybe_chart = None;
+                    let mut include_source = true;
+
                     let mut html = if let Some(mut code) = code_block.take() {
-                        if code.lang == "chart" || code.lang == "vega" || code.lang == "py chart" {
+                        if code.lang == "chart"
+                            || code.lang == "vega"
+                            || code.lang.starts_with("py chart")
+                        {
                             maybe_chart = Some(super::chart::format_chart(
                                 &code,
                                 &code_block_content,
                                 context.config.is_in_publish_mode(),
                             ));
-                            if code.lang == "py chart" {
+                            if code.lang.starts_with("py chart") {
+                                if code.lang.contains("false") {
+                                    include_source = false;
+                                }
                                 code.lang = "py".into();
                             }
                         }
@@ -634,10 +642,17 @@ pub fn markdown_to_html(
                     };
 
                     if let Some(chart) = maybe_chart {
-                        html = format!(
-                            "<div class=\"custom-chart-container\"><div class=\"custom-chart\">{}</div><details><summary>Source</summary><div class=\"custom-chart-source\">{}</div></details></div>",
-                            chart, html
-                        );
+                        if include_source {
+                            html = format!(
+                                "<div class=\"custom-chart-container\"><div class=\"custom-chart\">{}</div><details><summary>Source</summary><div class=\"custom-chart-source\">{}</div></details></div>",
+                                chart, html
+                            );
+                        } else {
+                            html = format!(
+                                "<div class=\"custom-chart-container\"><div class=\"custom-chart\">{}</div></div>",
+                                chart
+                            );
+                        }
                     }
 
                     events.push(Event::Html(html.into()));
