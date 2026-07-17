@@ -222,7 +222,6 @@ fn can_render_charts() {
 }
 
 #[test]
-#[test]
 fn invocation_count_increments_in_shortcode() {
     let body = common::render(
         r#"

@@ -50,12 +50,73 @@ pub fn format_chart(code: ParsedFence, content: &str) -> String {
     }
 }
 
-fn convert_chart_to_svg(_code: ParsedFence, content: &str) -> Result<String> {
+// This was actually not great
+#[allow(unused)]
+fn convert_chart_to_svg_vega(_code: ParsedFence, content: &str) -> Result<String> {
     let mut child = Command::new("npx")
         .args(["--yes", "-p", "vega-lite", "-p", "vega", "-p", "vega-cli", "vl2svg"])
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
+        .spawn()?;
+
+    {
+        let mut stdin =
+            child.stdin.take().ok_or("Failed to open stdin").map_err(|e| anyhow!("{e}"))?;
+        stdin.write_all(content.as_bytes())?;
+    }
+
+    let output = child.wait_with_output()?;
+    if output.status.success() {
+        let svg_output = String::from_utf8(output.stdout)?;
+        Ok(svg_output)
+    } else {
+        let error_msg = String::from_utf8(output.stderr)?;
+        Err(anyhow!(error_msg))
+    }
+}
+
+// Let's just try matplotlib
+fn convert_chart_to_svg(_code: ParsedFence, content: &str) -> Result<String> {
+    let mut child = Command::new("python3")
+        .args([
+            "-c",
+            &format!(
+                "
+import io
+import re
+import sys
+import matplotlib
+
+# Use a non-interactive backend to prevent GUI popups
+matplotlib.use('Agg')
+
+import matplotlib.pyplot as plt
+
+# 1. Create your plot
+{}
+
+# Save the SVG into an in-memory string buffer first
+svg_buffer = io.StringIO()
+plt.savefig(svg_buffer, format='svg', bbox_inches='tight')
+svg_data = svg_buffer.getvalue()
+plt.close()
+
+svg_data = re.sub(r'width=\"[^\"]+\"', '', svg_data)
+svg_data = re.sub(r'height=\"[^\"]+\"', '', svg_data)
+svg_data = re.sub(r'<\\?xml[^>]*\\?>\\s*', '', svg_data)
+svg_data = re.sub(r'<!DOCTYPE[^>]*>\\s*', '', svg_data)
+svg_data = re.sub(r'<metadata>.*?</metadata>\\s*', '', svg_data, flags=re.DOTALL)
+
+sys.stdout.write(svg_data)
+            ",
+                content
+            ),
+        ])
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .env("MPLBACKEND", "SVG")
         .spawn()?;
 
     {
