@@ -635,8 +635,8 @@ pub fn markdown_to_html(
 
                     if let Some(chart) = maybe_chart {
                         html = format!(
-                            "<div class=\"custom-chart-container\"><details><summary>Source</summary><div class=\"custom-chart-source\">{}</div></details><div class=\"custom-chart\">{}</div></div>",
-                            html, chart
+                            "<div class=\"custom-chart-container\"><div class=\"custom-chart\">{}</div><details><summary>Source</summary><div class=\"custom-chart-source\">{}</div></details></div>",
+                            chart, html
                         );
                     }
 
