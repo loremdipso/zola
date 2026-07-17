@@ -186,6 +186,42 @@ fn can_render_commented_out_shortcodes() {
     insta::assert_snapshot!(body);
 }
 
+// mta
+#[test]
+fn can_render_charts() {
+    let mut config = Config::default_for_test();
+    config.markdown.highlighting = Some(Highlighting {
+        error_on_missing_language: false,
+        style: HighlightStyle::Inline,
+        theme: HighlightConfig::Single { theme: "github-dark".to_string() },
+        extra_grammars: vec![],
+        extra_themes: vec![],
+        registry: get_test_registry(),
+    });
+    let body = common::render_with_config(
+        r#"
+```chart
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v6.json",
+  "width": "container",
+  "height": 250,
+  "data": {"url": "data/cars.json"},
+  "mark": "bar",
+  "encoding": {
+    "x": {"field": "Origin"},
+    "y": {"aggregate": "count", "title": "Number of Cars"}
+  }
+}
+```
+"#,
+        config,
+    )
+    .unwrap()
+    .body;
+    assert_eq!(body, "TEST");
+}
+
+#[test]
 #[test]
 fn invocation_count_increments_in_shortcode() {
     let body = common::render(
@@ -342,7 +378,7 @@ fn can_render_markdown_in_nested_shortcodes_with_bodies() {
     let config = Config::default_for_test();
     let body = common::render_with_config(
         r#"
-# Begin level 0  
+# Begin level 0
 
 {% render_md() %}
 

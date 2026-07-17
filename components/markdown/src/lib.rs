@@ -1,3 +1,4 @@
+mod chart;
 mod context;
 mod markdown;
 mod shortcode;

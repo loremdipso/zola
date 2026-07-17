@@ -20,6 +20,7 @@ errors = { workspace = true }
 utils = { workspace = true }
 config = { workspace = true }
 console = { workspace = true }
+anyhow = "1.0.103"
 
 [dev-dependencies]
 templates = { workspace = true }
