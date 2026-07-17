@@ -308,6 +308,10 @@ impl Config {
         self.mode == Mode::Check
     }
 
+    pub fn is_in_publish_mode(&self) -> bool {
+        self.mode == Mode::Build
+    }
+
     pub fn should_exclude_paginated_pages_in_sitemap(&self) -> bool {
         self.exclude_paginated_pages_in_sitemap == ExcludePaginatedPagesInSitemap::All
     }

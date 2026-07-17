@@ -576,7 +576,11 @@ pub fn markdown_to_html(
                 Event::End(TagEnd::CodeBlock) => {
                     let html = if let Some(code) = code_block.take() {
                         if code.lang == "chart" || code.lang == "vega" || code.lang == "py chart" {
-                            super::chart::format_chart(code, &code_block_content)
+                            super::chart::format_chart(
+                                code,
+                                &code_block_content,
+                                context.config.is_in_publish_mode(),
+                            )
                         } else if let Some(hl) = &context.config.markdown.highlighting {
                             if !hl.registry.contains_grammar(&code.lang) {
                                 let location = if let Some(p) = path {

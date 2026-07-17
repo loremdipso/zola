@@ -11,7 +11,8 @@ const CACHE_FOLDER_NAME: &str = ".cache";
 #[cfg(not(debug_assertions))]
 const VERSION: u64 = 1;
 
-pub fn format_chart(code: ParsedFence, content: &str) -> String {
+#[allow(unused_variables)]
+pub fn format_chart(code: ParsedFence, content: &str, is_publishing: bool) -> String {
     let content = content.trim();
 
     #[cfg(not(debug_assertions))]
@@ -31,8 +32,10 @@ pub fn format_chart(code: ParsedFence, content: &str) -> String {
         match convert_chart_to_svg(code, content) {
             Ok(result) => {
                 let contents = format!("<div class=\"custom-chart\">{}</div>", result);
-                _ = create_dir(CACHE_FOLDER_NAME);
-                _ = std::fs::write(path, &contents);
+                if is_publishing {
+                    _ = create_dir(CACHE_FOLDER_NAME);
+                    _ = std::fs::write(path, &contents);
+                }
                 return contents;
             }
             Err(e) => {
@@ -41,12 +44,9 @@ pub fn format_chart(code: ParsedFence, content: &str) -> String {
         }
     }
 
-    #[cfg(debug_assertions)]
-    {
-        match convert_chart_to_svg(code, content) {
-            Ok(result) => format!("<div class=\"custom-chart\">{}</div>", result),
-            Err(e) => format!("<div class=\"custom-chart-error\">{}</div>", e),
-        }
+    match convert_chart_to_svg(code, content) {
+        Ok(result) => format!("<div class=\"custom-chart\">{}</div>", result),
+        Err(e) => format!("<div class=\"custom-chart-error\">{}</div>", e),
     }
 }
 
