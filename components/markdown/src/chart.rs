@@ -103,6 +103,9 @@ import matplotlib.pyplot as plt
 # Style
 plt.style.use('dark_background')
 
+# Don't hard-code text shapes
+matplotlib.rcParams['svg.fonttype'] = 'none'
+
 # Force transparent backgrounds for both the main figure and the plot area
 matplotlib.rcParams['figure.facecolor'] = 'none'
 matplotlib.rcParams['axes.facecolor'] = 'none'
