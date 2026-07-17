@@ -93,21 +93,44 @@ matplotlib.use('Agg')
 
 import matplotlib.pyplot as plt
 
-# 1. Create your plot
+# Style
+plt.style.use('dark_background')
+
+# Force transparent backgrounds for both the main figure and the plot area
+matplotlib.rcParams['figure.facecolor'] = 'none'
+matplotlib.rcParams['axes.facecolor'] = 'none'
+
+# Ensure text, labels, and ticks are clean white
+matplotlib.rcParams['text.color'] = '#FFFFFF'
+matplotlib.rcParams['axes.labelcolor'] = '#FFFFFF'
+matplotlib.rcParams['xtick.color'] = '#FFFFFF'
+matplotlib.rcParams['ytick.color'] = '#FFFFFF'
+matplotlib.rcParams['axes.edgecolor'] = '#444444'  # Soft gray border
+
+# Make gridlines subtler so they don't clash on dark backgrounds
+matplotlib.rcParams['grid.color'] = '#333333'
+matplotlib.rcParams['grid.alpha'] = 0.5
+
+# Enable responsive SVGs (viewBox scaling)
+matplotlib.rcParams['svg.image_inline'] = True
+
+# User-code to create plot
 {}
 
-# Save the SVG into an in-memory string buffer first
+# Render to string
 svg_buffer = io.StringIO()
 plt.savefig(svg_buffer, format='svg', bbox_inches='tight')
 svg_data = svg_buffer.getvalue()
 plt.close()
 
+# Remove junk via regexes that we're too dumb to configure away
 svg_data = re.sub(r'width=\"[^\"]+\"', '', svg_data)
 svg_data = re.sub(r'height=\"[^\"]+\"', '', svg_data)
 svg_data = re.sub(r'<\\?xml[^>]*\\?>\\s*', '', svg_data)
 svg_data = re.sub(r'<!DOCTYPE[^>]*>\\s*', '', svg_data)
 svg_data = re.sub(r'<metadata>.*?</metadata>\\s*', '', svg_data, flags=re.DOTALL)
 
+# Write to stdout
 sys.stdout.write(svg_data)
             ",
                 content
