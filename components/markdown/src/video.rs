@@ -1,4 +1,3 @@
-use crate::utils::get_stable_hash;
 use anyhow::{Result, anyhow};
 use giallo::ParsedFence;
 use std::fs::read_to_string;
@@ -18,7 +17,7 @@ pub fn format_video(
     let do_optimize = false;
 
     let Some(base_path) = maybe_path else { return Err(anyhow!("Missing path")) };
-    let hash = get_stable_hash(content.trim()).to_string();
+    // let hash = get_stable_hash(content.trim()).to_string();
     let markdown_path = Path::new(".").join("content").join(base_path);
     let Some(root) = markdown_path.parent() else { return Err(anyhow!("Missing parent")) };
 
