@@ -14,6 +14,9 @@ pub fn format_video(
     _is_publishing: bool,
     maybe_path: Option<&str>,
 ) -> Result<String> {
+    // TODO: should we enable optimization, or is that too far?
+    let do_optimize = false;
+
     let Some(base_path) = maybe_path else { return Err(anyhow!("Missing path")) };
     let hash = get_stable_hash(content.trim()).to_string();
     let markdown_path = Path::new(".").join("content").join(base_path);
@@ -58,24 +61,34 @@ pub fn format_video(
         return Err(anyhow!("Missing extension on {}", video_path.to_string_lossy()));
     };
 
-    let output_path = video_path.with_file_name(format!("{}_optimized.{}", stem, extension));
+    let output_path = if do_optimize {
+        video_path.with_file_name(format!("{}_optimized.{}", stem, extension))
+    } else {
+        video_path.clone()
+    };
+
     let resolution_path = video_path.with_file_name(RESOLUTION);
 
     if !output_path.exists() {
-        // TODO: spawn this?
-        // create this
-        Command::new("ffmpeg")
-            .arg("-i")
-            .arg(&video_path)
-            .args(&[
-                "-c:v", "libx265", "-preset", "medium", "-crf", "28", "-c:a", "aac", "-b:a", "128k",
-            ])
-            .arg(output_path)
-            .output()?;
+        if do_optimize {
+            // TODO: spawn this?
+            // create this
+            Command::new("ffmpeg")
+                .arg("-i")
+                .arg(&video_path)
+                .args(&[
+                    "-c:v", "libx265", "-preset", "medium", "-crf", "28", "-c:a", "aac", "-b:a",
+                    "128k",
+                ])
+                .arg(output_path)
+                .output()?;
         // TODO: is blocking correct?
+        } else {
+            return Err(anyhow!("Video files doesn't exist: {}", output_path.to_string_lossy()));
+        }
     }
 
-    if !resolution_path.exists() {
+    let resolution = if !resolution_path.exists() {
         let output = Command::new("ffprobe")
             .args(&[
                 "-v",
@@ -91,10 +104,13 @@ pub fn format_video(
             .output()?;
 
         let output = String::from_utf8_lossy(&output.stdout).to_string();
-        std::fs::write(&resolution_path, output.trim())?;
-    }
+        let output = output.trim();
+        std::fs::write(&resolution_path, output)?;
+        output.into()
+    } else {
+        read_to_string(resolution_path)?
+    };
 
-    let resolution = read_to_string(resolution_path)?;
     let Some((left, right)) = resolution.split_once("x") else {
         return Err(anyhow!("Bad resolution: {}", resolution));
     };
@@ -104,8 +120,11 @@ pub fn format_video(
 
     let relative_path = Path::new(base_path);
     let Some(relative_path) = relative_path.parent() else { return Err(anyhow!("Missing parent")) };
-    let relative_path = relative_path.join(&path_arg);
-    let relative_path = relative_path.with_file_name(format!("{}_optimized.{}", stem, extension));
+    let mut relative_path = relative_path.join(&path_arg);
+    if do_optimize {
+        relative_path = relative_path.with_file_name(format!("{}_optimized.{}", stem, extension));
+    }
+
     let relative_path = relative_path.to_string_lossy();
 
     Ok(format!(
