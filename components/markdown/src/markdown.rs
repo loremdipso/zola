@@ -410,6 +410,7 @@ pub fn markdown_to_html(
         .get("page")
         .or_else(|| context.tera_context.get("section"))
         .map(|x| x.as_object().unwrap().get("relative_path").unwrap().as_str().unwrap());
+
     // the rendered html
     let mut html = String::with_capacity(content.len());
     let mut summary = None;
@@ -596,11 +597,15 @@ pub fn markdown_to_html(
                         }
 
                         if code.lang == "video" {
-                            super::video::format_video(
+                            match super::video::format_video(
                                 &code,
                                 &code_block_content,
                                 context.config.is_in_publish_mode(),
-                            )
+                                context.current_page_path.clone(),
+                            ) {
+                                Ok(video) => video,
+                                Err(e) => format!("ERROR: {e}"),
+                            }
                         } else if let Some(hl) = &context.config.markdown.highlighting {
                             if !hl.registry.contains_grammar(&code.lang) {
                                 let location = if let Some(p) = path {
