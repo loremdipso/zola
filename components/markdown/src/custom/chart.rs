@@ -10,9 +10,6 @@ const CACHE_FOLDER_NAME: &str = ".publish_cache";
 #[cfg(not(debug_assertions))]
 const DEBUG_CACHE_FOLDER_NAME: &str = ".debug_cache";
 
-#[cfg(not(debug_assertions))]
-const VERSION: u64 = 1;
-
 #[allow(unused_variables)]
 pub fn format_chart(code: &ParsedFence, content: &str, is_publishing: bool) -> String {
     let content = content.trim();

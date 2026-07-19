@@ -188,6 +188,32 @@ fn can_render_commented_out_shortcodes() {
 
 // mta
 #[test]
+fn can_render_images() {
+    let mut config = Config::default_for_test();
+    config.markdown.highlighting = Some(Highlighting {
+        error_on_missing_language: false,
+        style: HighlightStyle::Inline,
+        theme: HighlightConfig::Single { theme: "github-dark".to_string() },
+        extra_grammars: vec![],
+        extra_themes: vec![],
+        registry: get_test_registry(),
+    });
+    let body = common::render_with_config(
+        r#"
+```video
+title = "Progress bar"
+path = "assets/demo.mp4"
+```
+"#,
+        config,
+    )
+    .unwrap()
+    .body;
+    assert_eq!(body, "TEST");
+}
+
+// mta
+#[test]
 fn can_render_videos() {
     let mut config = Config::default_for_test();
     config.markdown.highlighting = Some(Highlighting {

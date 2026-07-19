@@ -1,9 +1,7 @@
-mod chart;
 mod context;
+mod custom;
 mod markdown;
 mod shortcode;
-mod utils;
-mod video;
 
 use shortcode::{extract_shortcodes, insert_md_shortcodes};
 

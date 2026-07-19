@@ -1,6 +1,8 @@
 // TODO: use good hash
+#[allow(unused)]
 const VERSION: u64 = 1;
 
+#[allow(unused)]
 pub fn get_stable_hash(s: &str) -> u64 {
     let mut hash = 14695981039346656037_u64; // FNV offset basis
     for byte in s.as_bytes() {

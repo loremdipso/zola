@@ -583,7 +583,7 @@ pub fn markdown_to_html(
                             || code.lang == "vega"
                             || code.lang.starts_with("py chart")
                         {
-                            maybe_chart = Some(super::chart::format_chart(
+                            maybe_chart = Some(super::custom::format_chart(
                                 &code,
                                 &code_block_content,
                                 context.config.is_in_publish_mode(),
@@ -597,13 +597,23 @@ pub fn markdown_to_html(
                         }
 
                         if code.lang == "video" {
-                            match super::video::format_video(
+                            match super::custom::format_video(
                                 &code,
                                 &code_block_content,
                                 context.config.is_in_publish_mode(),
                                 context.current_page_path.clone(),
                             ) {
                                 Ok(video) => video,
+                                Err(e) => format!("ERROR: {e}"),
+                            }
+                        } else if code.lang == "image" {
+                            match super::custom::format_image(
+                                &code,
+                                &code_block_content,
+                                context.config.is_in_publish_mode(),
+                                context.current_page_path.clone(),
+                            ) {
+                                Ok(image) => image,
                                 Err(e) => format!("ERROR: {e}"),
                             }
                         } else if let Some(hl) = &context.config.markdown.highlighting {
