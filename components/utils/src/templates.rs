@@ -148,6 +148,14 @@ pub fn check_template_fallbacks<'a>(
         return Some(name);
     }
 
+    // mta - try tera if html doesn't exist
+    {
+        let name = name.replace(".html", ".tera");
+        if let Some((key, _)) = tera.templates.get_key_value(&name) {
+            return Some(key);
+        }
+    }
+
     // check if it is part of a theme
     if let Some(ref t) = *theme {
         let theme_template_name = format!("{}/templates/{}", t, name);

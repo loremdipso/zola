@@ -34,7 +34,7 @@ impl Shortcode {
             self.tera_name = def.tera_name.clone();
         } else {
             return Err(errors::anyhow!(
-                "Found usage of a shortcode named `{}` but we do not know about. Make sure it's not a typo and that a field name `{}.{{html,md}}` exists in the `templates/shortcodes` directory.",
+                "Found usage of a shortcode named `{}` but we do not know about. Make sure it's not a typo and that a field name `{}.{{html,tera,md}}` exists in the `templates/shortcodes` directory.",
                 self.name,
                 self.name
             ));
